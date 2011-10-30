@@ -1,0 +1,40 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    i18n_domain="cc.content">
+
+  <!-- configure your content components here -->
+  
+  <!-- -*- extra stuff goes here -*- -->
+  <class class=".job.job">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.Ijob"
+        />
+  </class>
+  <class class=".service.service">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.Iservice"
+        />
+  </class>
+  <class class=".color.color">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.Icolor"
+        />
+  </class>
+  <class class=".cartype.cartype">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.Icartype"
+        />
+  </class>
+  <class class=".brand.brand">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.Ibrand"
+        />
+  </class>
+
+</configure>

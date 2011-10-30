@@ -1,0 +1,15 @@
+body
+{
+	background:#efefef;
+}
+#visual-portal-wrapper
+{
+	width:940px;
+	margin:0 auto;
+	background:#fff;
+	padding:0 10px;
+}
+#portal-columns
+{
+	width:100%;
+}

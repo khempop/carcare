@@ -1,0 +1,1582 @@
+Metadata-Version: 1.0
+Name: cc.content
+Version: 1.0
+Summary: UNKNOWN
+Home-page: http://svn.plone.org/svn/collective/
+Author: UNKNOWN
+Author-email: UNKNOWN
+License: GPL
+Description: .. contents::
+        
+        .. Note!
+           -----
+           Update the following URLs to point to your:
+        
+           - code repository
+           - bug tracker
+           - questions/comments feedback mail
+           (do not set a real mail, to avoid spams)
+        
+           Or remove it if not used.
+        
+        - Code repository: http://svn.somewhere.com/...
+        - Questions and comments to somemailing_list
+        - Report bugs at http://bug.somewhere.com/..
+        
+        
+        Change history
+        **************
+        
+        Changelog
+        =========
+        
+        1.0 (xxxx-xx-xx)
+        ----------------
+        
+        - Created recipe with ZopeSkel
+          [""]
+        
+        Detailed Documentation
+        **********************
+        
+        Introduction
+        ============
+        
+        This is a full-blown functional test. The emphasis here is on testing what
+        the user may input and see, and the system is largely tested as a black box.
+        We use PloneTestCase to set up this test as well, so we have a full Plone site
+        to play with. We *can* inspect the state of the portal, e.g. using 
+        self.portal and self.folder, but it is often frowned upon since you are not
+        treating the system as a black box. Also, if you, for example, log in or set
+        roles using calls like self.setRoles(), these are not reflected in the test
+        browser, which runs as a separate session.
+        
+        Being a doctest, we can tell a story here.
+        
+        First, we must perform some setup. We use the testbrowser that is shipped
+        with Five, as this provides proper Zope 2 integration. Most of the 
+        documentation, though, is in the underlying zope.testbrower package.
+        
+            >>> from Products.Five.testbrowser import Browser
+            >>> browser = Browser()
+            >>> portal_url = self.portal.absolute_url()
+        
+        The following is useful when writing and debugging testbrowser tests. It lets
+        us see all error messages in the error_log.
+        
+            >>> self.portal.error_log._ignored_exceptions = ()
+        
+        With that in place, we can go to the portal front page and log in. We will
+        do this using the default user from PloneTestCase:
+        
+            >>> from Products.PloneTestCase.setup import portal_owner, default_password
+        
+        Because add-on themes or products may remove or hide the login portlet, this test will use the login form that comes with plone.  
+        
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+        
+        Here, we set the value of the fields on the login form and then simulate a
+        submit click.  We then ensure that we get the friendly logged-in message:
+        
+            >>> "You are now logged in" in browser.contents
+            True
+        
+        Finally, let's return to the front page of our site before continuing
+        
+            >>> browser.open(portal_url)
+        
+        -*- extra stuff goes here -*-
+        The job content type
+        ===============================
+        
+        In this section we are tesing the job content type by performing
+        basic operations like adding, updadating and deleting job content
+        items.
+        
+        Adding a new job content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'job' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('job').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'job' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'job Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'job' content item to the portal.
+        
+        Updating an existing job content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New job Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New job Sample' in browser.contents
+            True
+        
+        Removing a/an job content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New job
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New job Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New job Sample' object. First we
+        go to the contents tab and select the 'New job Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New job Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New job
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New job Sample' in browser.contents
+            False
+        
+        Adding a new job content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add job content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'job' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('job').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'job' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'job Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new job content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The service content type
+        ===============================
+        
+        In this section we are tesing the service content type by performing
+        basic operations like adding, updadating and deleting service content
+        items.
+        
+        Adding a new service content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'service' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('service').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'service' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'service Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'service' content item to the portal.
+        
+        Updating an existing service content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New service Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New service Sample' in browser.contents
+            True
+        
+        Removing a/an service content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New service
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New service Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New service Sample' object. First we
+        go to the contents tab and select the 'New service Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New service Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New service
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New service Sample' in browser.contents
+            False
+        
+        Adding a new service content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add service content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'service' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('service').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'service' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'service Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new service content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The surface content type
+        ===============================
+        
+        In this section we are tesing the surface content type by performing
+        basic operations like adding, updadating and deleting surface content
+        items.
+        
+        Adding a new surface content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'surface' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('surface').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'surface' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'surface Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'surface' content item to the portal.
+        
+        Updating an existing surface content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New surface Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New surface Sample' in browser.contents
+            True
+        
+        Removing a/an surface content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New surface
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New surface Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New surface Sample' object. First we
+        go to the contents tab and select the 'New surface Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New surface Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New surface
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New surface Sample' in browser.contents
+            False
+        
+        Adding a new surface content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add surface content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'surface' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('surface').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'surface' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'surface Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new surface content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The coating content type
+        ===============================
+        
+        In this section we are tesing the coating content type by performing
+        basic operations like adding, updadating and deleting coating content
+        items.
+        
+        Adding a new coating content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'coating' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('coating').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'coating' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'coating Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'coating' content item to the portal.
+        
+        Updating an existing coating content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New coating Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New coating Sample' in browser.contents
+            True
+        
+        Removing a/an coating content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New coating
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New coating Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New coating Sample' object. First we
+        go to the contents tab and select the 'New coating Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New coating Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New coating
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New coating Sample' in browser.contents
+            False
+        
+        Adding a new coating content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add coating content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'coating' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('coating').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'coating' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'coating Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new coating content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The oilfilter content type
+        ===============================
+        
+        In this section we are tesing the oilfilter content type by performing
+        basic operations like adding, updadating and deleting oilfilter content
+        items.
+        
+        Adding a new oilfilter content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'oilfilter' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilfilter').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilfilter' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilfilter Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'oilfilter' content item to the portal.
+        
+        Updating an existing oilfilter content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New oilfilter Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New oilfilter Sample' in browser.contents
+            True
+        
+        Removing a/an oilfilter content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New oilfilter
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilfilter Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New oilfilter Sample' object. First we
+        go to the contents tab and select the 'New oilfilter Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New oilfilter Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New oilfilter
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilfilter Sample' in browser.contents
+            False
+        
+        Adding a new oilfilter content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add oilfilter content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'oilfilter' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilfilter').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilfilter' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilfilter Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new oilfilter content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The oilbrake content type
+        ===============================
+        
+        In this section we are tesing the oilbrake content type by performing
+        basic operations like adding, updadating and deleting oilbrake content
+        items.
+        
+        Adding a new oilbrake content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'oilbrake' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilbrake').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilbrake' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilbrake Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'oilbrake' content item to the portal.
+        
+        Updating an existing oilbrake content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New oilbrake Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New oilbrake Sample' in browser.contents
+            True
+        
+        Removing a/an oilbrake content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New oilbrake
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilbrake Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New oilbrake Sample' object. First we
+        go to the contents tab and select the 'New oilbrake Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New oilbrake Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New oilbrake
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilbrake Sample' in browser.contents
+            False
+        
+        Adding a new oilbrake content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add oilbrake content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'oilbrake' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilbrake').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilbrake' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilbrake Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new oilbrake content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The oilreargear content type
+        ===============================
+        
+        In this section we are tesing the oilreargear content type by performing
+        basic operations like adding, updadating and deleting oilreargear content
+        items.
+        
+        Adding a new oilreargear content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'oilreargear' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilreargear').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilreargear' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilreargear Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'oilreargear' content item to the portal.
+        
+        Updating an existing oilreargear content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New oilreargear Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New oilreargear Sample' in browser.contents
+            True
+        
+        Removing a/an oilreargear content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New oilreargear
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilreargear Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New oilreargear Sample' object. First we
+        go to the contents tab and select the 'New oilreargear Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New oilreargear Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New oilreargear
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilreargear Sample' in browser.contents
+            False
+        
+        Adding a new oilreargear content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add oilreargear content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'oilreargear' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilreargear').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilreargear' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilreargear Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new oilreargear content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The oilgear content type
+        ===============================
+        
+        In this section we are tesing the oilgear content type by performing
+        basic operations like adding, updadating and deleting oilgear content
+        items.
+        
+        Adding a new oilgear content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'oilgear' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilgear').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilgear' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilgear Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'oilgear' content item to the portal.
+        
+        Updating an existing oilgear content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New oilgear Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New oilgear Sample' in browser.contents
+            True
+        
+        Removing a/an oilgear content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New oilgear
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilgear Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New oilgear Sample' object. First we
+        go to the contents tab and select the 'New oilgear Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New oilgear Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New oilgear
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oilgear Sample' in browser.contents
+            False
+        
+        Adding a new oilgear content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add oilgear content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'oilgear' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oilgear').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oilgear' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oilgear Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new oilgear content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The oil content type
+        ===============================
+        
+        In this section we are tesing the oil content type by performing
+        basic operations like adding, updadating and deleting oil content
+        items.
+        
+        Adding a new oil content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'oil' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oil').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oil' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oil Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'oil' content item to the portal.
+        
+        Updating an existing oil content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New oil Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New oil Sample' in browser.contents
+            True
+        
+        Removing a/an oil content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New oil
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oil Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New oil Sample' object. First we
+        go to the contents tab and select the 'New oil Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New oil Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New oil
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New oil Sample' in browser.contents
+            False
+        
+        Adding a new oil content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add oil content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'oil' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('oil').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'oil' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'oil Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new oil content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The color content type
+        ===============================
+        
+        In this section we are tesing the color content type by performing
+        basic operations like adding, updadating and deleting color content
+        items.
+        
+        Adding a new color content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'color' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('color').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'color' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'color Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'color' content item to the portal.
+        
+        Updating an existing color content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New color Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New color Sample' in browser.contents
+            True
+        
+        Removing a/an color content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New color
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New color Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New color Sample' object. First we
+        go to the contents tab and select the 'New color Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New color Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New color
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New color Sample' in browser.contents
+            False
+        
+        Adding a new color content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add color content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'color' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('color').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'color' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'color Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new color content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The cartype content type
+        ===============================
+        
+        In this section we are tesing the cartype content type by performing
+        basic operations like adding, updadating and deleting cartype content
+        items.
+        
+        Adding a new cartype content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'cartype' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('cartype').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'cartype' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'cartype Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'cartype' content item to the portal.
+        
+        Updating an existing cartype content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New cartype Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New cartype Sample' in browser.contents
+            True
+        
+        Removing a/an cartype content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New cartype
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New cartype Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New cartype Sample' object. First we
+        go to the contents tab and select the 'New cartype Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New cartype Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New cartype
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New cartype Sample' in browser.contents
+            False
+        
+        Adding a new cartype content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add cartype content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'cartype' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('cartype').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'cartype' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'cartype Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new cartype content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        The brand content type
+        ===============================
+        
+        In this section we are tesing the brand content type by performing
+        basic operations like adding, updadating and deleting brand content
+        items.
+        
+        Adding a new brand content item
+        --------------------------------
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        Then we select the type of item we want to add. In this case we select
+        'brand' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('brand').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'brand' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'brand Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        And we are done! We added a new 'brand' content item to the portal.
+        
+        Updating an existing brand content item
+        ---------------------------------------
+        
+        Let's click on the 'edit' tab and update the object attribute values.
+        
+            >>> browser.getLink('Edit').click()
+            >>> browser.getControl(name='title').value = 'New brand Sample'
+            >>> browser.getControl('Save').click()
+        
+        We check that the changes were applied.
+        
+            >>> 'Changes saved' in browser.contents
+            True
+            >>> 'New brand Sample' in browser.contents
+            True
+        
+        Removing a/an brand content item
+        --------------------------------
+        
+        If we go to the home page, we can see a tab with the 'New brand
+        Sample' title in the global navigation tabs.
+        
+            >>> browser.open(portal_url)
+            >>> 'New brand Sample' in browser.contents
+            True
+        
+        Now we are going to delete the 'New brand Sample' object. First we
+        go to the contents tab and select the 'New brand Sample' for
+        deletion.
+        
+            >>> browser.getLink('Contents').click()
+            >>> browser.getControl('New brand Sample').click()
+        
+        We click on the 'Delete' button.
+        
+            >>> browser.getControl('Delete').click()
+            >>> 'Item(s) deleted' in browser.contents
+            True
+        
+        So, if we go back to the home page, there is no longer a 'New brand
+        Sample' tab.
+        
+            >>> browser.open(portal_url)
+            >>> 'New brand Sample' in browser.contents
+            False
+        
+        Adding a new brand content item as contributor
+        ------------------------------------------------
+        
+        Not only site managers are allowed to add brand content items, but
+        also site contributors.
+        
+        Let's logout and then login as 'contributor', a portal member that has the
+        contributor role assigned.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = 'contributor'
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        We use the 'Add new' menu to add a new content item.
+        
+            >>> browser.getLink('Add new').click()
+        
+        We select 'brand' and click the 'Add' button to get to the add form.
+        
+            >>> browser.getControl('brand').click()
+            >>> browser.getControl(name='form.button.Add').click()
+            >>> 'brand' in browser.contents
+            True
+        
+        Now we fill the form and submit it.
+        
+            >>> browser.getControl(name='title').value = 'brand Sample'
+            >>> browser.getControl('Save').click()
+            >>> 'Changes saved' in browser.contents
+            True
+        
+        Done! We added a new brand content item logged in as contributor.
+        
+        Finally, let's login back as manager.
+        
+            >>> browser.getLink('Log out').click()
+            >>> browser.open(portal_url + '/login_form')
+            >>> browser.getControl(name='__ac_name').value = portal_owner
+            >>> browser.getControl(name='__ac_password').value = default_password
+            >>> browser.getControl(name='submit').click()
+            >>> browser.open(portal_url)
+        
+        
+        
+        
+        Contributors
+        ************
+        
+        "", Author
+        
+        
+        Download
+        ********
+        
+Platform: UNKNOWN
+Classifier: Framework :: Plone
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
